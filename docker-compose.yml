@@ -1,11 +1,11 @@
 version: "3.2"
 services:
   storm-frontend:
-    image: aggarwalnam/storm-frontend:v1
+    image: aggarwalnam/storm-frontend:v2
     ports:
       - 8080:80
   storm-backend:
-    image: aggarwalnam/storm-backend:v1
+    image: aggarwalnam/storm-backend:v2
     ports:
       - 8055:8055
     depends_on:
