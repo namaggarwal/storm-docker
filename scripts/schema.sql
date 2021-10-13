@@ -253,8 +253,6 @@ CREATE TABLE `directus_settings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
-
-
 CREATE TABLE `directus_webhooks` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
@@ -266,6 +264,47 @@ CREATE TABLE `directus_webhooks` (
   `collections` text,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `goal` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(256) NOT NULL,
+  `value` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `value_UNIQUE` (`value`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+
+CREATE TABLE `purchase` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(256) NOT NULL,
+  `value` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `value_UNIQUE` (`value`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+
+CREATE TABLE `within` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(256) NOT NULL,
+  `value` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `value_UNIQUE` (`value`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE `customer_source` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(256) NOT NULL,
+  `value` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `value_UNIQUE` (`value`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+
+CREATE TABLE `actions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(256) NOT NULL,
+  `value` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `value_UNIQUE` (`value`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
 CREATE TABLE `projects` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -294,14 +333,6 @@ CREATE TABLE `projects` (
   CONSTRAINT `projects_user_updated_foreign` FOREIGN KEY (`user_updated`) REFERENCES `directus_users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=latin1;
 
-CREATE TABLE `actions` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(256) NOT NULL,
-  `value` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `value_UNIQUE` (`value`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
-
 CREATE TABLE `customers` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `type` int(4) unsigned DEFAULT '0',
@@ -323,17 +354,32 @@ CREATE TABLE `customers` (
   `place_of_birth_additional` varchar(1024) DEFAULT NULL,
   `nationality_additional` varchar(255) DEFAULT NULL,
   `postal_code` varchar(255) DEFAULT NULL,
-  `source_contact` int(11) DEFAULT NULL,
   `address_of_buyers` varchar(2048) DEFAULT NULL,
   `status` int(11) DEFAULT '0',
   `last_updated` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `customer_source` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `customers_user_created_foreign` (`user_created`),
   KEY `customers_user_updated_foreign` (`user_updated`),
+  KEY `customers_customers_source_foreign_idx` (`customer_source`),
+  CONSTRAINT `customers_customers_source_foreign` FOREIGN KEY (`customer_source`) REFERENCES `customer_source` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `customers_user_created_foreign` FOREIGN KEY (`user_created`) REFERENCES `directus_users` (`id`),
   CONSTRAINT `customers_user_updated_foreign` FOREIGN KEY (`user_updated`) REFERENCES `directus_users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+
+CREATE TABLE `customer_projects` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `customer_id` int(10) unsigned NOT NULL,
+  `project_id` int(10) unsigned NOT NULL,
+  `created_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `customer_customer_id_idx` (`customer_id`),
+  KEY `project_project_id_idx` (`project_id`),
+  CONSTRAINT `customer_customer_id` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `project_project_id` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+
 
 CREATE TABLE `customer_actions` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
