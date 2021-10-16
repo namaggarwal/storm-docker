@@ -1,5 +1,5 @@
-CREATE DATABASE  IF NOT EXISTS `exampledb` /*!40100 DEFAULT CHARACTER SET latin1 */;
-USE `exampledb`;
+CREATE DATABASE  IF NOT EXISTS `stormdb` /*!40100 DEFAULT CHARACTER SET latin1 */;
+USE `stormdb`;
 
 CREATE TABLE `directus_folders` (
   `id` char(36) NOT NULL,
@@ -17,7 +17,6 @@ CREATE TABLE `directus_roles` (
   `description` text,
   `ip_access` text,
   `enforce_tfa` tinyint(1) NOT NULL DEFAULT '0',
-  `module_list` json DEFAULT NULL,
   `collection_list` json DEFAULT NULL,
   `admin_access` tinyint(1) NOT NULL DEFAULT '0',
   `app_access` tinyint(1) NOT NULL DEFAULT '1',
@@ -28,7 +27,7 @@ CREATE TABLE `directus_users` (
   `id` char(36) NOT NULL,
   `first_name` varchar(50) DEFAULT NULL,
   `last_name` varchar(50) DEFAULT NULL,
-  `email` varchar(128) NOT NULL,
+  `email` varchar(128) DEFAULT NULL,
   `password` varchar(255) DEFAULT NULL,
   `location` varchar(255) DEFAULT NULL,
   `title` varchar(50) DEFAULT NULL,
@@ -43,7 +42,10 @@ CREATE TABLE `directus_users` (
   `token` varchar(255) DEFAULT NULL,
   `last_access` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `last_page` varchar(255) DEFAULT NULL,
+  `provider` varchar(128) NOT NULL DEFAULT 'default',
+  `external_identifier` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `directus_users_external_identifier_unique` (`external_identifier`),
   UNIQUE KEY `directus_users_email_unique` (`email`),
   KEY `directus_users_role_foreign` (`role`),
   CONSTRAINT `directus_users_role_foreign` FOREIGN KEY (`role`) REFERENCES `directus_roles` (`id`) ON DELETE SET NULL
@@ -61,7 +63,7 @@ CREATE TABLE `directus_activity` (
   `comment` text,
   PRIMARY KEY (`id`),
   KEY `directus_activity_collection_foreign` (`collection`)
-) ENGINE=InnoDB AUTO_INCREMENT=223 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
 
 CREATE TABLE `directus_collections` (
   `collection` varchar(64) NOT NULL,
@@ -79,7 +81,12 @@ CREATE TABLE `directus_collections` (
   `accountability` varchar(255) DEFAULT 'all',
   `color` varchar(255) DEFAULT NULL,
   `item_duplication_fields` json DEFAULT NULL,
-  PRIMARY KEY (`collection`)
+  `sort` int(11) DEFAULT NULL,
+  `group` varchar(64) DEFAULT NULL,
+  `collapse` varchar(255) NOT NULL DEFAULT 'open',
+  PRIMARY KEY (`collection`),
+  KEY `directus_collections_group_foreign` (`group`),
+  CONSTRAINT `directus_collections_group_foreign` FOREIGN KEY (`group`) REFERENCES `directus_collections` (`collection`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
@@ -96,16 +103,14 @@ CREATE TABLE `directus_fields` (
   `hidden` tinyint(1) NOT NULL DEFAULT '0',
   `sort` int(10) unsigned DEFAULT NULL,
   `width` varchar(30) DEFAULT 'full',
-  `group` int(10) unsigned DEFAULT NULL,
   `translations` json DEFAULT NULL,
   `note` text,
   `conditions` json DEFAULT NULL,
   `required` tinyint(1) DEFAULT '0',
+  `group` varchar(64) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `directus_fields_collection_foreign` (`collection`),
-  KEY `directus_fields_group_foreign` (`group`),
-  CONSTRAINT `directus_fields_group_foreign` FOREIGN KEY (`group`) REFERENCES `directus_fields` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=latin1;
+  KEY `directus_fields_collection_foreign` (`collection`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `directus_files` (
   `id` char(36) NOT NULL,
@@ -159,7 +164,7 @@ CREATE TABLE `directus_permissions` (
   KEY `directus_permissions_collection_foreign` (`collection`),
   KEY `directus_permissions_role_foreign` (`role`),
   CONSTRAINT `directus_permissions_role_foreign` FOREIGN KEY (`role`) REFERENCES `directus_roles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `directus_presets` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -168,18 +173,18 @@ CREATE TABLE `directus_presets` (
   `role` char(36) DEFAULT NULL,
   `collection` varchar(64) DEFAULT NULL,
   `search` varchar(100) DEFAULT NULL,
-  `filters` json DEFAULT NULL,
   `layout` varchar(100) DEFAULT 'tabular',
   `layout_query` json DEFAULT NULL,
   `layout_options` json DEFAULT NULL,
   `refresh_interval` int(11) DEFAULT NULL,
+  `filter` json DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `directus_presets_collection_foreign` (`collection`),
   KEY `directus_presets_user_foreign` (`user`),
   KEY `directus_presets_role_foreign` (`role`),
   CONSTRAINT `directus_presets_role_foreign` FOREIGN KEY (`role`) REFERENCES `directus_roles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `directus_presets_user_foreign` FOREIGN KEY (`user`) REFERENCES `directus_users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
 CREATE TABLE `directus_relations` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -195,7 +200,7 @@ CREATE TABLE `directus_relations` (
   PRIMARY KEY (`id`),
   KEY `directus_relations_many_collection_foreign` (`many_collection`),
   KEY `directus_relations_one_collection_foreign` (`one_collection`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `directus_revisions` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -211,7 +216,7 @@ CREATE TABLE `directus_revisions` (
   KEY `directus_revisions_activity_foreign` (`activity`),
   CONSTRAINT `directus_revisions_activity_foreign` FOREIGN KEY (`activity`) REFERENCES `directus_activity` (`id`) ON DELETE CASCADE,
   CONSTRAINT `directus_revisions_parent_foreign` FOREIGN KEY (`parent`) REFERENCES `directus_revisions` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=142 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
 CREATE TABLE `directus_sessions` (
   `token` varchar(64) NOT NULL,
@@ -219,6 +224,7 @@ CREATE TABLE `directus_sessions` (
   `expires` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `ip` varchar(255) DEFAULT NULL,
   `user_agent` varchar(255) DEFAULT NULL,
+  `data` json DEFAULT NULL,
   PRIMARY KEY (`token`),
   KEY `directus_sessions_user_foreign` (`user`),
   CONSTRAINT `directus_sessions_user_foreign` FOREIGN KEY (`user`) REFERENCES `directus_users` (`id`) ON DELETE CASCADE
@@ -241,6 +247,7 @@ CREATE TABLE `directus_settings` (
   `storage_default_folder` char(36) DEFAULT NULL,
   `basemaps` json DEFAULT NULL,
   `mapbox_key` varchar(255) DEFAULT NULL,
+  `module_bar` json DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `directus_settings_project_logo_foreign` (`project_logo`),
   KEY `directus_settings_public_foreground_foreign` (`public_foreground`),
@@ -257,13 +264,49 @@ CREATE TABLE `directus_webhooks` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `method` varchar(10) NOT NULL DEFAULT 'POST',
-  `url` text,
+  `url` text NOT NULL,
   `status` varchar(10) NOT NULL DEFAULT 'active',
   `data` tinyint(1) NOT NULL DEFAULT '1',
   `actions` varchar(100) NOT NULL,
-  `collections` text,
+  `collections` text NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `directus_dashboards` (
+  `id` char(36) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `icon` varchar(30) NOT NULL DEFAULT 'dashboard',
+  `note` text,
+  `date_created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `user_created` char(36) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `directus_dashboards_user_created_foreign` (`user_created`),
+  CONSTRAINT `directus_dashboards_user_created_foreign` FOREIGN KEY (`user_created`) REFERENCES `directus_users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `directus_panels` (
+  `id` char(36) NOT NULL,
+  `dashboard` char(36) NOT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `icon` varchar(30) DEFAULT 'insert_chart',
+  `color` varchar(10) DEFAULT NULL,
+  `show_header` tinyint(1) NOT NULL DEFAULT '0',
+  `note` text,
+  `type` varchar(255) NOT NULL,
+  `position_x` int(11) NOT NULL,
+  `position_y` int(11) NOT NULL,
+  `width` int(11) NOT NULL,
+  `height` int(11) NOT NULL,
+  `options` json DEFAULT NULL,
+  `date_created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `user_created` char(36) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `directus_panels_dashboard_foreign` (`dashboard`),
+  KEY `directus_panels_user_created_foreign` (`user_created`),
+  CONSTRAINT `directus_panels_dashboard_foreign` FOREIGN KEY (`dashboard`) REFERENCES `directus_dashboards` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `directus_panels_user_created_foreign` FOREIGN KEY (`user_created`) REFERENCES `directus_users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
 
 CREATE TABLE `goal` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
